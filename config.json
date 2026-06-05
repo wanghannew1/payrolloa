@@ -25,10 +25,6 @@
         "keywords": ["扣款合计"],
         "label": "扣款合计（五险一金、单位代理费）"
       },
-      "net_gross": {
-        "keywords": ["实发工资"],
-        "label": "实发工资（扣调整前）"
-      },
       "net_total": {
         "keywords": ["实发合计", "实发工资"],
         "label": "实发合计（元）"
@@ -62,7 +58,6 @@
     "column_sum_checks": [
       {"column": "deduction_total"},
       {"column": "personal_tax"},
-      {"column": "net_gross"},
       {"column": "net_total"},
       {"column": "adjustment"}
     ],
