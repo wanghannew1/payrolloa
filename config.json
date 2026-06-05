@@ -1,8 +1,8 @@
 {
   "excel": {
     "title_row": 1,
-    "unit_name_row": 2,
-    "header_start_row": 3,
+    "unit_name_row": 0,
+    "header_start_row": 2,
     "header_row_count": 3,
     "summary_row_marker": "合计",
     "unit_name_patterns": [
@@ -92,7 +92,7 @@
     ]
   },
   "ui": {
-    "template_name": "东软系统工资发放表审批",
-    "description": "请上传东软系统导出的工资发放表，上传页面会自动提取全部工资的转账合计、扣款合计、实发合计数值，计算个税及其他数值"
+    "template_name": "212室彩虹公司项目工资发放审批",
+    "description": "上传212室彩虹公司项目手工编写的工资发放表，对应的OA审批名称：工资发放审批（手工做表），上传页面会自动校验转账合计、扣款合计、个税、实发工资等数值"
   }
 }
