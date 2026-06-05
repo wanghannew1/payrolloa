@@ -1,0 +1,83 @@
+{
+  "excel": {
+    "title_row": 1,
+    "unit_name_row": 2,
+    "header_start_row": 3,
+    "header_row_count": 3,
+    "summary_row_marker": "合计",
+    "unit_name_patterns": [
+      "(?:单位名称[：:]|[名称][：:]\\s*)(.+?)(?:\\s|$)"
+    ],
+    "title_unit_suffixes": [
+      "有限公司", "股份公司", "分公司", "公司", "集团",
+      "医院", "卫生院", "诊所",
+      "研究院", "研究所", "学院", "大学", "学校",
+      "中心", "管委会", "事业部", "处", "局"
+    ],
+    "title_unit_allowed_chars": "[一-龥A-Za-z0-9（）()·\\-—]",
+    "title_unit_patterns": [],
+    "columns": {
+      "transfer_total": {
+        "keywords": ["转账合计", "转款合计"],
+        "label": "转账合计（元）"
+      },
+      "deduction_total": {
+        "keywords": ["扣款合计"],
+        "label": "扣款合计（五险一金、单位代理费）"
+      },
+      "net_gross": {
+        "keywords": ["实发工资"],
+        "label": "实发工资（扣调整前）"
+      },
+      "net_total": {
+        "keywords": ["实发合计"],
+        "label": "实发合计（元）"
+      },
+      "personal_tax": {
+        "keywords": ["个人所得税", "个税"],
+        "label": "个人所得税"
+      },
+      "adjustment": {
+        "keywords": ["个人其他调整"],
+        "label": "个人其他调整"
+      }
+    }
+  },
+  "validation": {
+    "enabled": true,
+    "strict": true,
+    "tolerance": 0.00,
+    "write_back_sheet": true,
+    "write_back_sheet_name": "验证结果",
+    "column_sum_checks": [
+      {"column": "deduction_total"},
+      {"column": "personal_tax"},
+      {"column": "net_gross"},
+      {"column": "net_total"},
+      {"column": "adjustment"}
+    ],
+    "row_formulas": [
+      {
+        "name": "转账合计 = 扣款合计 + 个人所得税 + 个人其他调整 + 实发合计",
+        "lhs": "transfer_total",
+        "rhs_plus": ["deduction_total", "personal_tax", "adjustment", "net_total"],
+        "rhs_minus": []
+      }
+    ]
+  },
+  "table_field": {
+    "columns": [
+      {"key": "report_name", "label": "报表名称"},
+      {"key": "unit_name", "label": "甲方单位项目名称"},
+      {"key": "transfer_total", "label": "转账合计（元）"},
+      {"key": "deduction_total", "label": "扣款合计（五险一金、单位代理费）"},
+      {"key": "personal_tax", "label": "个人所得税合计"},
+      {"key": "adjustment", "label": "其他调整合计"},
+      {"key": "net_total", "label": "实发合计（元）"}
+    ]
+  },
+  "ui": {
+    "template_name": "东软系统工资发放表审批",
+    "description": "请上传东软系统导出的工资发放表，上传页面会自动提取全部工资的转账合计、扣款合计、实发合计数值，计算个税及其他数值"
+  }
+}
