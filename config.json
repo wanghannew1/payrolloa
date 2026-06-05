@@ -30,7 +30,7 @@
         "label": "实发工资（扣调整前）"
       },
       "net_total": {
-        "keywords": ["实发合计"],
+        "keywords": ["实发合计", "实发工资"],
         "label": "实发合计（元）"
       },
       "personal_tax": {
