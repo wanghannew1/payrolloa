@@ -82,12 +82,13 @@
   "table_field": {
     "columns": [
       {"key": "report_name", "label": "报表名称"},
-      {"key": "unit_name", "label": "甲方单位项目名称"},
-      {"key": "transfer_total", "label": "转账合计（元）"},
+      {"key": "transfer_total", "label": "转账合计（含抵扣）"},
       {"key": "deduction_total", "label": "扣款合计（五险一金、单位代理费）"},
       {"key": "personal_tax", "label": "个人所得税合计"},
       {"key": "adjustment", "label": "其他调整合计"},
-      {"key": "net_total", "label": "实发合计（元）"}
+      {"key": "net_total", "label": "实发工资（元）"},
+      {"key": "overpayment_offset", "label": "溢缴款抵扣"},
+      {"key": "party_a_transfer", "label": "甲方转款"}
     ]
   },
   "ui": {
