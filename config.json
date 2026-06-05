@@ -27,7 +27,7 @@
       },
       "net_total": {
         "keywords": ["实发合计", "实发工资"],
-        "label": "实发合计（元）"
+        "label": "实发工资（元）"
       },
       "personal_tax": {
         "keywords": ["个人所得税", "个税"],
