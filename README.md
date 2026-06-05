@@ -1,6 +1,8 @@
-# Payroll2DingTalk
+# PayrollOA (payrolloa)
 
 > 工资单推送钉钉OA审批 — 单文件 Streamlit Demo
+>
+> ⚠️ **注意：这是 `payrolloa` 项目的新版本仓库**，与旧版 `payrolloa` 独立维护。请使用本仓库的代码和配置。
 
 ---
 
@@ -13,8 +15,8 @@
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/wanghannew1/Payroll2DingTalk.git
-cd Payroll2DingTalk
+git clone git@github.com:wanghannew1/payrolloa.git
+cd payrolloa
 ```
 
 ### 2. 创建虚拟环境（推荐 uv）
@@ -65,24 +67,24 @@ sudo nano /etc/systemd/system/streamlit-payroll.service
 
 ```ini
 [Unit]
-Description=Streamlit Payroll2DingTalk App
+Description=Streamlit payrolloa App
 After=network.target
 
 [Service]
 Type=simple
 User=vod
-WorkingDirectory=/home/vod/code/Payroll2DingTalk
+WorkingDirectory=/home/vod/code/payrolloa
 
 # 使用虚拟环境的绝对路径
-ExecStart=/home/vod/code/Payroll2DingTalk/.venv/bin/streamlit run /home/vod/code/Payroll2DingTalk/demo_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
+ExecStart=/home/vod/code/payrolloa/.venv/bin/streamlit run /home/vod/code/payrolloa/demo_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
 
 # 自动重启配置
 Restart=always
 RestartSec=10
 
 # 日志输出
-StandardOutput=append:/home/vod/code/Payroll2DingTalk/streamlit.log
-StandardError=append:/home/vod/code/Payroll2DingTalk/streamlit-error.log
+StandardOutput=append:/home/vod/code/payrolloa/streamlit.log
+StandardError=append:/home/vod/code/payrolloa/streamlit-error.log
 
 [Install]
 WantedBy=multi-user.target
@@ -103,7 +105,7 @@ sudo systemctl status streamlit-payroll
 
 ```bash
 # 查看日志
-sudo tail -f /home/vod/code/Payroll2DingTalk/streamlit.log
+sudo tail -f /home/vod/code/payrolloa/streamlit.log
 
 # 重启服务
 sudo systemctl restart streamlit-payroll
@@ -210,7 +212,7 @@ sudo nano /etc/logrotate.d/streamlit-payroll
 写入：
 
 ```
-/home/vod/code/Payroll2DingTalk/*.log {
+/home/vod/code/payrolloa/*.log {
     daily
     rotate 7
     compress
@@ -517,7 +519,7 @@ sudo nano /etc/logrotate.d/streamlit-payroll
 **服务启动失败**
 
 1. 检查 `.env` 文件权限：`ls -la .env`
-2. 检查日志：`sudo tail -f /home/vod/code/Payroll2DingTalk/streamlit-error.log`
+2. 检查日志：`sudo tail -f /home/vod/code/payrolloa/streamlit-error.log`
 3. 确认虚拟环境路径正确：`which streamlit` 应显示 `.venv/bin/streamlit`
 
 ## 已验证的 API 链路

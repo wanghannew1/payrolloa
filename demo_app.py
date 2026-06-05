@@ -69,6 +69,16 @@ DEFAULT_CONFIG = {
                 "keywords": ["单位缴纳", "单位社保", "单位五险一金"],
                 "label": "单位缴纳"
             }
+        },
+        "extra_summary_rows": {
+            "overpayment_offset": {
+                "keywords": ["溢缴款抵扣"],
+                "label": "溢缴款抵扣"
+            },
+            "party_a_transfer": {
+                "keywords": ["甲方转款"],
+                "label": "甲方转款"
+            }
         }
     },
     "validation": {
@@ -78,7 +88,16 @@ DEFAULT_CONFIG = {
         "write_back_sheet": True,
         "write_back_sheet_name": "验证结果",
         "column_sum_checks": [],
-        "row_formulas": []
+        "row_formulas": [],
+        "extra_summary_checks": [
+            {
+                "name": "转款合计 = 溢缴款抵扣 + 甲方转款",
+                "column": "transfer_total",
+                "lhs_row_key": "summary",
+                "rhs_plus_row_keys": ["overpayment_offset", "party_a_transfer"],
+                "rhs_minus_row_keys": []
+            }
+        ]
     },
     "table_field": {
         "columns": [
@@ -595,6 +614,38 @@ def parse_excel(file_bytes, filename):
             continue
         data_rows.append(r)
 
+    # 读取额外汇总行（位于合计行之后，如"溢缴款抵扣"、"甲方转款"）
+    extra_summary_cfg = excel_cfg.get("extra_summary_rows", {})
+    extra_summary_values = {}
+    if extra_summary_cfg:
+        for ridx in range(summary_row_idx + 1, len(rows)):
+            row = rows[ridx]
+            if not row or row[0] is None:
+                continue
+            first_cell = re.sub(r"\s+", "", str(row[0]))
+            for row_key, row_def in extra_summary_cfg.items():
+                if row_key in extra_summary_values:
+                    continue  # 已匹配过，跳过
+                keywords = row_def.get("keywords", [])
+                for kw in keywords:
+                    kw_normalized = re.sub(r"\s+", "", kw)
+                    if first_cell == kw_normalized:
+                        row_values = {}
+                        for col_key, cidx in column_indices.items():
+                            if cidx >= 0 and cidx < len(row):
+                                v = row[cidx]
+                                if v is None:
+                                    row_values[col_key] = "0.00"
+                                else:
+                                    try:
+                                        row_values[col_key] = f"{float(v):.2f}"
+                                    except (ValueError, TypeError):
+                                        row_values[col_key] = str(v).strip() or "0.00"
+                            else:
+                                row_values[col_key] = "0.00"
+                        extra_summary_values[row_key] = row_values
+                        break
+
     result = {
         "report_name": report_name,
         "unit_name": unit_name,
@@ -605,6 +656,7 @@ def parse_excel(file_bytes, filename):
         "column_indices": column_indices,
         "summary_row": summary_row,
         "data_rows": data_rows,
+        "extra_summary_values": extra_summary_values,
     }
     # 把 excel.columns 里所有列的合计值都加上（包括 transfer/deduction/net）
     # 这样 table_field 可以引用任意已配置的列
@@ -774,6 +826,50 @@ def validate_payroll(parsed, validation_cfg, excel_cols):
             "detail": detail
         })
 
+    # === D. 额外汇总行校验 ===
+    extra_summary_values = parsed.get("extra_summary_values", {})
+
+    def extra_row_value(row_key, col_key):
+        row_data = extra_summary_values.get(row_key, {})
+        val = row_data.get(col_key, "0.00")
+        try:
+            return round(float(val), 2)
+        except (ValueError, TypeError):
+            return 0.0
+
+    for check in validation_cfg.get("extra_summary_checks", []) or []:
+        name = check.get("name", "<未命名校验>")
+        col = check.get("column")
+        lhs_row_key = check.get("lhs_row_key", "summary")
+        rhs_plus = check.get("rhs_plus_row_keys", []) or []
+        rhs_minus = check.get("rhs_minus_row_keys", []) or []
+        if not col:
+            continue
+
+        # lhs: summary 行 或 extra_summary 行
+        if lhs_row_key == "summary":
+            lhs_val = col_value(summary_row, col)
+        else:
+            lhs_val = extra_row_value(lhs_row_key, col)
+
+        rhs_val = round(
+            sum(extra_row_value(rk, col) for rk in rhs_plus)
+            - sum(extra_row_value(rk, col) for rk in rhs_minus),
+            2
+        )
+
+        diff = round(lhs_val - rhs_val, 2)
+        passed = abs(diff) <= tolerance
+        checks.append({
+            "kind": "extra_summary_check",
+            "name": name,
+            "lhs_value": lhs_val,
+            "rhs_value": rhs_val,
+            "diff": diff,
+            "passed": passed,
+            "detail": "" if passed else f"lhs={lhs_val:.2f}，rhs={rhs_val:.2f}，差 {diff:+.2f}"
+        })
+
     passed_count = sum(1 for c in checks if c["passed"])
     failed_count = len(checks) - passed_count
     return {
@@ -842,6 +938,7 @@ def append_validation_sheet(file_bytes, validation_result,
         "column_sum": "纵向加总",
         "row_formula_summary": "横向公式",
         "row_formula_rows": "横向公式",
+        "extra_summary_check": "额外汇总校验",
     }
 
     # 明细行
@@ -993,6 +1090,7 @@ def build_summary_workbook(parsed_list, validation_results, tf_columns,
         "column_sum": "纵向加总",
         "row_formula_summary": "横向公式",
         "row_formula_rows": "横向公式",
+        "extra_summary_check": "额外汇总校验",
     }
     cur = 4
     for p in parsed_list:

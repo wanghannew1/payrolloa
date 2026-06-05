@@ -41,6 +41,16 @@
         "keywords": ["个人其他调整"],
         "label": "个人其他调整"
       }
+    },
+    "extra_summary_rows": {
+      "overpayment_offset": {
+        "keywords": ["溢缴款抵扣"],
+        "label": "溢缴款抵扣"
+      },
+      "party_a_transfer": {
+        "keywords": ["甲方转款"],
+        "label": "甲方转款"
+      }
     }
   },
   "validation": {
@@ -62,6 +72,15 @@
         "lhs": "transfer_total",
         "rhs_plus": ["deduction_total", "personal_tax", "adjustment", "net_total"],
         "rhs_minus": []
+      }
+    ],
+    "extra_summary_checks": [
+      {
+        "name": "转款合计 = 溢缴款抵扣 + 甲方转款",
+        "column": "transfer_total",
+        "lhs_row_key": "summary",
+        "rhs_plus_row_keys": ["overpayment_offset", "party_a_transfer"],
+        "rhs_minus_row_keys": []
       }
     ]
   },
