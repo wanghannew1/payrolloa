@@ -629,7 +629,7 @@ def parse_excel(file_bytes, filename):
                 keywords = row_def.get("keywords", [])
                 for kw in keywords:
                     kw_normalized = re.sub(r"\s+", "", kw)
-                    if first_cell == kw_normalized:
+                    if kw_normalized in first_cell:
                         row_values = {}
                         for col_key, cidx in column_indices.items():
                             if cidx >= 0 and cidx < len(row):
@@ -665,10 +665,28 @@ def parse_excel(file_bytes, filename):
     extra_summary_cfg = excel_cfg.get("extra_summary_rows", {})
     for row_key, row_values in extra_summary_values.items():
         result[row_key] = row_values.get("transfer_total", "0.00")
-    # 确保 extra_summary_rows 中定义但 Excel 中未找到的行也有默认值
-    for row_key in extra_summary_cfg:
-        if row_key not in result:
-            result[row_key] = "0.00"
+
+    # 智能填充缺失的额外汇总行：
+    #   转款合计 = 溢缴款抵扣 + 甲方转款
+    #   如果甲方转款不存在 → 甲方转款 = 转款合计 - 溢缴款抵扣(如有)
+    #   如果溢缴款抵扣不存在 → 溢缴款抵扣 = 0
+    transfer_total_val = result.get("transfer_total", "0.00")
+    has_overpayment = "overpayment_offset" in extra_summary_values
+    has_party_a = "party_a_transfer" in extra_summary_values
+
+    if not has_party_a:
+        try:
+            ov = float(
+                extra_summary_values.get("overpayment_offset", {}).get("transfer_total", "0.00")
+                if has_overpayment else "0.00"
+            )
+            tt = float(transfer_total_val)
+            result["party_a_transfer"] = f"{tt - ov:.2f}"
+        except (ValueError, TypeError):
+            result["party_a_transfer"] = transfer_total_val
+
+    if not has_overpayment:
+        result["overpayment_offset"] = "0.00"
     return result
 
 
@@ -838,7 +856,9 @@ def validate_payroll(parsed, validation_cfg, excel_cols):
     extra_summary_values = parsed.get("extra_summary_values", {})
 
     def extra_row_value(row_key, col_key):
-        row_data = extra_summary_values.get(row_key, {})
+        row_data = extra_summary_values.get(row_key)
+        if row_data is None:
+            return None  # 该行在 Excel 中未找到
         val = row_data.get(col_key, "0.00")
         try:
             return round(float(val), 2)
@@ -859,15 +879,45 @@ def validate_payroll(parsed, validation_cfg, excel_cols):
             lhs_val = col_value(summary_row, col)
         else:
             lhs_val = extra_row_value(lhs_row_key, col)
+            if lhs_val is None:
+                continue  # lhs 对应的额外汇总行不存在，跳过
 
-        rhs_val = round(
-            sum(extra_row_value(rk, col) for rk in rhs_plus)
-            - sum(extra_row_value(rk, col) for rk in rhs_minus),
-            2
-        )
+        # 收集 rhs 中实际存在的行；如果全部不存在，跳过该校验
+        rhs_plus_vals = []
+        rhs_minus_vals = []
+        missing_rows = []
+        for rk in rhs_plus:
+            v = extra_row_value(rk, col)
+            if v is None:
+                missing_rows.append(rk)
+            else:
+                rhs_plus_vals.append(v)
+        for rk in rhs_minus:
+            v = extra_row_value(rk, col)
+            if v is None:
+                missing_rows.append(rk)
+            else:
+                rhs_minus_vals.append(v)
 
+        if not rhs_plus_vals and not rhs_minus_vals:
+            # rhs 中所有额外汇总行都不存在，跳过该校验
+            continue
+
+        rhs_val = round(sum(rhs_plus_vals) - sum(rhs_minus_vals), 2)
         diff = round(lhs_val - rhs_val, 2)
         passed = abs(diff) <= tolerance
+
+        detail = ""
+        if not passed:
+            detail = f"lhs={lhs_val:.2f}，rhs={rhs_val:.2f}，差 {diff:+.2f}"
+            if missing_rows:
+                missing_labels = []
+                excel_cfg = CONFIG.get("excel", {})
+                extra_cfg = excel_cfg.get("extra_summary_rows", {})
+                for rk in missing_rows:
+                    missing_labels.append(extra_cfg.get(rk, {}).get("label", rk))
+                detail += f"（{'、'.join(missing_labels)} 未找到）"
+
         checks.append({
             "kind": "extra_summary_check",
             "name": name,
@@ -875,7 +925,7 @@ def validate_payroll(parsed, validation_cfg, excel_cols):
             "rhs_value": rhs_val,
             "diff": diff,
             "passed": passed,
-            "detail": "" if passed else f"lhs={lhs_val:.2f}，rhs={rhs_val:.2f}，差 {diff:+.2f}"
+            "detail": detail
         })
 
     passed_count = sum(1 for c in checks if c["passed"])
