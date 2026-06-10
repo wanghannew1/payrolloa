@@ -662,8 +662,13 @@ def parse_excel(file_bytes, filename):
     # 这样 table_field 可以引用任意已配置的列
     result.update(column_summary_values)
     # 把额外汇总行的 transfer_total 值展平到顶层，方便 table_field 引用
+    extra_summary_cfg = excel_cfg.get("extra_summary_rows", {})
     for row_key, row_values in extra_summary_values.items():
         result[row_key] = row_values.get("transfer_total", "0.00")
+    # 确保 extra_summary_rows 中定义但 Excel 中未找到的行也有默认值
+    for row_key in extra_summary_cfg:
+        if row_key not in result:
+            result[row_key] = "0.00"
     return result
 
 
