@@ -36,6 +36,10 @@
       "adjustment": {
         "keywords": ["个人其他调整"],
         "label": "个人其他调整"
+      },
+      "tax_and_fee": {
+        "keywords": ["税费"],
+        "label": "税费"
       }
     },
     "extra_summary_rows": {
@@ -63,9 +67,9 @@
     ],
     "row_formulas": [
       {
-        "name": "转账合计 = 扣款合计 + 个人所得税 + 个人其他调整 + 实发合计",
+        "name": "转账合计 = 税费 + 扣款合计 + 个人所得税 + 个人其他调整 + 实发合计",
         "lhs": "transfer_total",
-        "rhs_plus": ["deduction_total", "personal_tax", "adjustment", "net_total"],
+        "rhs_plus": ["tax_and_fee", "deduction_total", "personal_tax", "adjustment", "net_total"],
         "rhs_minus": []
       }
     ],
