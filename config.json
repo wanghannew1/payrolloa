@@ -60,11 +60,11 @@
     "write_back_sheet": true,
     "write_back_sheet_name": "验证结果",
     "column_sum_checks": [
+      {"column": "tax_and_fee"},
       {"column": "deduction_total"},
       {"column": "personal_tax"},
-      {"column": "net_total"},
       {"column": "adjustment"},
-      {"column": "tax_and_fee"}
+      {"column": "net_total"}
     ],
     "row_formulas": [
       {
@@ -90,8 +90,8 @@
       {"key": "party_a_transfer", "label": "甲方转款（元）"},
       {"key": "overpayment_offset", "label": "溢缴款抵扣（元）"},
       {"key": "transfer_total", "label": "转账合计（含抵扣）"},
-      {"key": "deduction_total", "label": "扣款合计（五险一金、单位代理费）"},
       {"key": "tax_and_fee", "label": "税费（元）"},
+      {"key": "deduction_total", "label": "扣款合计（五险一金、单位代理费）"},
       {"key": "personal_tax", "label": "个人所得税合计（元）"},
       {"key": "adjustment", "label": "其他调整合计（元）"},
       {"key": "net_total", "label": "实发工资（元）"}
